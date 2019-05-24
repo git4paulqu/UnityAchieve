@@ -241,11 +241,15 @@
     <Compile Include="Assets\Script\CombineSkinnedMesh\Main.cs" />
     <Compile Include="Assets\Script\CombineSkinnedMesh\SkinnedCombinedData.cs" />
     <Compile Include="Assets\Script\CombineSkinnedMesh\SkinnedMeshCombine.cs" />
+    <Compile Include="Assets\Script\Matrix\Main.cs" />
+    <Compile Include="Assets\Script\ShadowMap\CaptureDepth.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\Resources\Shader\Role\RoleCartoon.shader" />
     <None Include="Assets\Resources\Shader\Role\RoleCartoonCombine.shader" />
     <None Include="Assets\Resources\Shader\Scene\BlendLightmap.shader" />
+    <None Include="Assets\Resources\Shader\Scene\DepthTexture.shader" />
+    <None Include="Assets\Resources\Shader\Scene\ReceiveShadow.shader" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />
