@@ -17,6 +17,7 @@
 			#pragma fragment frag
 			// make fog work
 			#pragma multi_compile_fog
+			#pragma shader_feature HARD_SHADOW SOFT_SHADOW_PCF4x4
 			
 			#include "UnityCG.cginc"
 			#include "Lighting.cginc"
@@ -41,26 +42,27 @@
 			float4 _MainTex_ST;
 			float4 _Diffuse;
 
+			uniform half _bias;
 			uniform float _ShadowIntensity;
 			uniform fixed _ShadowMapTexmapScale;
 			uniform sampler2D _LightSpaceDepthTexture;
 			uniform float4x4 _World2LightSpace;
 			uniform float4x4 _World2LightSpace2UV;
 
-			float4 offset_lookup(sampler2D map, float4 uv, float2 offset)
+			float4 offset_lookup(sampler2D map, float4 loc, float2 offset)
 			{
-				return tex2D(map, uv.xy + offset * _ShadowMapTexmapScale);
+				return tex2D(map, loc.xy + offset * _ShadowMapTexmapScale);
 			}
 
-			float fragPCF4x4(v2f IN)
+			fixed4 fragPCF4x4(v2f i)
 			{
 		  		float sum = 0;
 		  		float x,y;
 		  		for (y = -1.5; y <= 1.5; y += 1.0)
 					  for (x = -1.5; x <= 1.5; x += 1.0)
 					  {
-					  		float depth = DecodeFloatRGBA(offset_lookup(_LightSpaceDepthTexture, IN.shadowCoord, float2(x,y)));
-		  					float shade = step(IN.shadowCoord.z, depth);
+					  		float depth = DecodeFloatRGBA(offset_lookup(_LightSpaceDepthTexture, i.shadowCoord, float2(x,y)));
+		  					float shade = step(i.shadowCoord.z - _bias, depth);
 		  					sum += shade;
 					  }
 		  		sum = sum / 16.0;
@@ -68,6 +70,12 @@
 		  	    return sum;
 			}
 
+			fixed4 fragHardShaowSample(v2f i)
+			{
+				float depth = DecodeFloatRGBA(tex2D(_LightSpaceDepthTexture, i.shadowCoord.xy));
+		  		float shade = step(i.shadowCoord.z - _bias, depth);
+		  		return max((1-shade), _ShadowIntensity);
+			}
 			
 			v2f vert (appdata v)
 			{
@@ -94,11 +102,13 @@
 				fixed3 diffuse = _LightColor0.rgb * _Diffuse.rgb * halfLambert;
 				col.rgb *= diffuse;
 
-				//float depth = DecodeFloatRGBA(tex2D(_LightSpaceDepthTexture, i.shadowCoord.xy));
-		  		//float shade = step(i.shadowCoord.z, depth);
-		  		//col *= max((1-shade), _ShadowIntensity);
-				col *= fragPCF4x4(i);
-
+				// apply shadow
+				#if HARD_SHADOW
+					col *= fragHardShaowSample(i);
+				#elif SOFT_SHADOW_PCF4x4
+					col *= fragPCF4x4(i);
+				#endif
+				
 				// apply fog
 				UNITY_APPLY_FOG(i.fogCoord, col);
 				return col;

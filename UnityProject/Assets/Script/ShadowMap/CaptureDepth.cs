@@ -49,7 +49,8 @@ public class CaptureDepth : MonoBehaviour {
         Matrix4x4 world2LightSpace = GL.GetGPUProjectionMatrix(_depthCamera.projectionMatrix, false) * _depthCamera.worldToCameraMatrix;
         Shader.SetGlobalMatrix("_World2LightSpace", world2LightSpace);
         Shader.SetGlobalMatrix("_World2LightSpace2UV", _posToUV * world2LightSpace);
-     
+
+        Shader.SetGlobalFloat("_bias", 0.0005f);
         Shader.SetGlobalFloat("_ShadowIntensity", 1-shadowIntensity);
     }
 
@@ -57,6 +58,30 @@ public class CaptureDepth : MonoBehaviour {
     {
         if (_depthTexture != null)
             GUI.DrawTextureWithTexCoords(new Rect(0, 20, 150, 150), _depthTexture, new Rect(0, 0, 1, 1), false);
+
+        if (GUI.Button(new Rect(0, 200, 100, 50), "HARD"))
+        {
+            ChangeShowType(ShadowType.HARD);
+        }
+
+        if (GUI.Button(new Rect(0, 250, 100, 50), "SOFT_PCF4x4"))
+        {
+            ChangeShowType(ShadowType.SOFT_PCF4x4);
+        }
+    }
+
+    private void ChangeShowType(ShadowType type)
+    {
+        if (type == ShadowType.HARD)
+        {
+            Shader.EnableKeyword("HARD_SHADOW");
+            Shader.DisableKeyword("SOFT_SHADOW_PCF4x4");
+        }
+        if (type == ShadowType.SOFT_PCF4x4)
+        {
+            Shader.DisableKeyword("HARD_SHADOW");
+            Shader.EnableKeyword("SOFT_SHADOW_PCF4x4");
+        }
     }
 
     public int textureSize;
@@ -68,4 +93,11 @@ public class CaptureDepth : MonoBehaviour {
     private Shader _depthSampleShader;
     private RenderTexture _depthTexture;
     private Matrix4x4 _posToUV;
+    private ShadowType _shadowType;
+
+    private enum ShadowType
+    {
+        HARD,
+        SOFT_PCF4x4,
+    }
 }
